@@ -1,0 +1,7 @@
+
+
+if you have multiple regions having identical zone labels within region...
+
+test nodes missing az labels
+
+replicset with more than 3 nodes ? [stripeset?]
