@@ -15,10 +15,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type pxvol struct {
-	id       string
-	repl     int
-	replicas []replicasets
+type pxvolume struct {
+	id      string
+	repl    int64
+	mounted string
+	az      map[string]int
+	//replicas []replicasets
 }
 
 type replicasets struct {
@@ -34,7 +36,7 @@ type pxnode struct {
 
 var (
 	address   = flag.String("address", "127.0.0.1:9100", "Address to server as <address>:<port>")
-	pxvolumes []pxvol
+	pxvolumes []pxvolume
 )
 
 func main() {
@@ -134,6 +136,16 @@ func main() {
 		fmt.Printf("Volume ID %s HA Level %v \n", volume.GetVolume().GetId(), volume.GetVolume().GetSpec().GetHaLevel())
 		mounted := ipnodemap[volume.GetVolume().GetAttachedOn()]
 
+		pxvolumes = append(pxvolumes, pxvolume{
+			id:      volume.GetVolume().GetId(),
+			repl:    volume.GetVolume().GetSpec().GetHaLevel(),
+			mounted: mounted,
+		})
+
+		pxvolumes[len(pxvolumes)-1].az = make(map[string]int)
+
+		fmt.Printf("\t found %s replicasets \n", volume.GetVolume().GetReplicaSets())
+
 		for _, replicaset := range volume.GetVolume().GetReplicaSets() {
 			for _, replicanodes := range replicaset.Nodes {
 
@@ -142,9 +154,19 @@ func main() {
 				} else {
 					fmt.Printf(" \t Node %s AZ %s \n", replicanodes, nodeazmap[replicanodes])
 				}
+
+				_, ok := pxvolumes[len(pxvolumes)-1].az[nodeazmap[replicanodes]]
+				if ok {
+					fmt.Println("inc1")
+					pxvolumes[len(pxvolumes)-1].az[nodeazmap[replicanodes]]++
+				} else {
+					fmt.Println("set1")
+					pxvolumes[len(pxvolumes)-1].az[nodeazmap[replicanodes]] = 1
+				}
 			}
 		}
 
+		fmt.Printf("finally pxvolumes %v", pxvolumes)
 		//		nd, _ := json.MarshalIndent(volume, "", "  ")
 		//		fmt.Printf(" JSON %s \n", nd)
 		//for _, volumeID := range

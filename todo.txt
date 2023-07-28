@@ -1,5 +1,8 @@
 
 
+consider volume status
+
+
 if you have multiple regions having identical zone labels within region...
 
 test nodes missing az labels
